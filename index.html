@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title> Clinic and Hospital Proximity </title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+    integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+    crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+    integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+    crossorigin=""></script>
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+    integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <!-- Mapbox stuff -->
+    <script src="https://api.mapbox.com/mapbox-gl-js/v1.8.1/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v1.8.1/mapbox-gl.css" rel="stylesheet" />
+    <script src="https://npmcdn.com/@turf/turf/turf.min.js"></script>
+    <!-- Javascript file with variables containing the JSON data for schools and clinics/hospitals -->
+    <script type="text/javascript" src="js/vars.js"></script>
+    <!-- My style css -->
+    <link rel="stylesheet" type="text/css" href = "css/style.css">
+  <head>
+    <body>
+      <p>Welcome! Click on a school to find the closest clinic or hospital</p>
+      <div id = 'map'></div>
+      <script>
+      mapboxgl.accessToken = 'pk.eyJ1IjoiZXJpY2hvMTk5OCIsImEiOiJjazdhc3owbHIwNHA4M2ZwcHhocjh1aTEwIn0.iei5tgBuXnHyFdmRvbnDGw';
+      var cmap = new mapboxgl.Map({
+            container: 'map',
+            id: 'mapbox/streets-v11',
+            style: 'mapbox://styles/ericho1998/ck7ziyhp323t31ilm93vmm854',
+            center:[-114.0719,51.0447],
+            zoom: 11
+          });
+
+          cmap.on('load', function() {
+            cmap.addLayer({
+              id:'schools', type:'symbol', source:{
+                type: 'geojson',
+                data: 'https://data.calgary.ca/resource/fd9t-tdn2.geojson'},
+              layout: { 'icon-image': 'library-15', 'icon-allow-overlap':true},
+              paint: { }
+            });
+            cmap.addLayer({
+              id: 'clinics', type: 'symbol', source: { type: 'geojson', data: clinics},
+              layout: { 'icon-image': 'hospital-15'},
+              paint:{ }
+            });
+
+            cmap.addSource('closest-hospital', {
+              type: 'geojson', data: { type: 'FeatureCollection', features: []}
+            });
+          });
+
+          var popup = new mapboxgl.Popup();
+          cmap.on('mousemove', function(e) {
+            var features = cmap.queryRenderedFeatures(e.point, {layers:
+            ['schools', 'clinics'] });
+            if (!features.length) {
+              popup.remove();
+              return;
+            }
+            var feature = features[0];
+            popup.setLngLat(feature.geometry.coordinates)
+            .setHTML('Name: ' + feature.properties.name + '<br>' + 'Type: ' + feature.properties.type)
+            .addTo(cmap);
+
+            cmap.getCanvas().style.cursor = features.length ? 'pointer'
+            : '';
+          });
+
+          cmap.on('click', function(a){
+            var schoolfeature = cmap.queryRenderedFeatures(a.point, {
+              layers: ['schools'] });
+            if (!schoolfeature.length) {
+              return;
+            }
+            var schoolf = schoolfeature[0];
+            var nearest = turf.nearest(schoolf, clinics);
+
+            if (nearest !== null) {
+              cmap.getSource('closest-hospital').setData({
+                type: 'FeatureCollection',
+                features: [
+                  nearest
+                ]
+              });
+              cmap.addLayer({
+                id: 'closest-hospital', type: 'circle', source: 'closest-hospital',
+                paint: { 'circle-radius': 14, 'circle-color': '#fc7d22'}
+              }, 'clinics');
+            }
+          });
+
+
+      </script>
+  </body>
+</html>

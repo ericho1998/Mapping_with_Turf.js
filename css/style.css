@@ -1,0 +1,30 @@
+body {
+  padding: 10px 0px;
+  background-color: #dff9fb;
+}
+
+@media screen and (max-width: 600px) {
+  nav li {
+    float: none;
+    width: 100%;
+  }
+}
+
+#map {
+  width: 100%;
+  top: 0;
+  bottom: 0;
+  position: absolute;
+}
+.current {
+  background-color: #23b368;
+}
+
+div {
+padding: 10px 0px;
+  display: block;
+}
+
+p {
+  padding-left: 4px;
+}
